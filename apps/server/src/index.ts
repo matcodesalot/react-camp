@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import path from 'path';
-import Campground from '../models/campground';
+import Campground from './models/campground';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
