@@ -1,6 +1,13 @@
 import { Schema, model } from 'mongoose';
 
-const campgroundSchema = new Schema({
+interface Campground {
+  title: string;
+  price: number;
+  description: string;
+  location: string;
+};
+
+const campgroundSchema = new Schema<Campground>({
   title: { type: String, required: true },
   price: { type: Number, required: true },
   description: { type: String, required: true },
