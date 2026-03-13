@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
 
 function App() {
   const [status, setStatus] = useState<string>('Loading...');
@@ -14,6 +15,9 @@ function App() {
     <div>
       <h1>React + Vite + Express</h1>
       <p>Server status: {status}</p>
+      <Link to="/campgrounds">
+        <button>Go to Campgrounds</button>
+      </Link>
     </div>
   );
 }

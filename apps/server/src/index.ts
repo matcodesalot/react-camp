@@ -25,15 +25,9 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'Server is running!' });
 });
 
-app.get('/api/make-campground', async (req: Request, res: Response) => {
-  const campground = new Campground({
-    title: 'Campground 1',
-    price: 100,
-    description: 'This is a description of the campground',
-    location: 'This is a location of the campground',
-  });
-  await campground.save();
-  res.json(campground);
+app.get('/api/campgrounds', async (req: Request, res: Response) => {
+  const campgrounds = await Campground.find({});
+  res.json(campgrounds);
 });
 
 if (process.env.NODE_ENV === 'production') {
