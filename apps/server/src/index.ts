@@ -30,6 +30,31 @@ app.get('/api/campgrounds', async (req: Request, res: Response) => {
   res.json(campgrounds);
 });
 
+app.get('/api/campgrounds/:id', async (req: Request, res: Response) => {
+  const campground = await Campground.findById(req.params.id);
+  res.json(campground);
+});
+
+app.post('/api/campgrounds', async (req: Request, res: Response) => {
+  const campground = new Campground(req.body);
+  await campground.save();
+  res.json(campground);
+});
+
+app.put('/api/campgrounds/:id', async (req: Request, res: Response) => {
+  const campground = await Campground.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true, runValidators: true }
+  );
+  res.json(campground);
+});
+
+app.delete('/api/campgrounds/:id', async (req: Request, res: Response) => {
+  await Campground.findByIdAndDelete(req.params.id);
+  res.json({ message: 'Campground deleted' });
+});
+
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../../../apps/client/dist')));
   app.get('*', (req: Request, res: Response) => {

@@ -1,4 +1,4 @@
-import { type FC, useEffect, useState } from 'react';
+import { useLoaderData, Link } from 'react-router';
 
 interface Campground {
   _id: string;
@@ -8,21 +8,22 @@ interface Campground {
   location: string;
 }
 
-export const Campgrounds: FC = () => {
-  const [campgrounds, setCampgrounds] = useState<Campground[]>([]);
+export async function loader() {
+  const res = await fetch('/api/campgrounds');
+  return res.json() as Promise<Campground[]>;
+}
 
-  useEffect(() => {
-    fetch('/api/campgrounds')
-      .then((res) => res.json())
-      .then((data) => setCampgrounds(data));
-  }, []);
+export const Campgrounds = () => {
+  const campgrounds = useLoaderData() as Campground[];
 
   return (
     <div>
       <h1>Campgrounds</h1>
       <ul>
         {campgrounds.map((c) => (
-          <li key={c._id}>{c.title}</li>
+          <li key={c._id}>
+            <Link to={`/campgrounds/${c._id}`}>{c.title}</Link>
+          </li>
         ))}
       </ul>
     </div>
