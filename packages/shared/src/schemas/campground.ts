@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const CampgroundSchema = z.object({
-  _id: z.uuid().optional(),
+  _id: z.string().optional(), // MongoDB ObjectIds are hex strings, not UUIDs
   title: z.string().min(1, 'Title is required'),
   price: z.number({ error: 'Price must be a number' }).min(0, 'Price must be 0 or greater'),
   description: z.string().min(1, 'Description is required'),
