@@ -8,12 +8,24 @@ export async function loader({ params }: LoaderFunctionArgs) {
   return CampgroundSchema.parse(await res.json());
 }
 
-export async function action({ params }: ActionFunctionArgs) {
-  const res = await fetch(`/api/campgrounds/${params.id}`, {
-    method: 'DELETE',
+export async function action({ params, request }: ActionFunctionArgs) {
+  if (request.method === 'DELETE') {
+    const res = await fetch(`/api/campgrounds/${params.id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Response('Failed to delete campground', { status: res.status });
+    return redirect('/campgrounds');
+  }
+
+  const formData = await request.formData();
+  const res = await fetch(`/api/campgrounds/${params.id}/reviews`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      body: formData.get('body'),
+      rating: Number(formData.get('rating')),
+    }),
   });
-  if (!res.ok) throw new Response('Failed to delete campground', { status: res.status });
-  return redirect('/campgrounds');
+  if (!res.ok) throw new Response('Failed to create review', { status: res.status });
+  return null;
 }
 
 export const Show = () => {
@@ -46,6 +58,18 @@ export const Show = () => {
           </button>
         </Form>
       </div>
+      <h2 className="text-2xl font-bold mb-2">Leave a review</h2>
+      <Form method="post">
+        <label className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-gray-700">Rating</span>
+          <input name="rating" type="range" min={1} max={5} step={1} className="border border-gray-300 rounded py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-gray-700">Comment</span>
+          <textarea name="body" className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </label>
+        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Submit</button>
+      </Form>
     </div>
   );
 };

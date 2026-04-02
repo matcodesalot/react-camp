@@ -7,6 +7,7 @@ export const CampgroundSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   location: z.string().min(1, 'Location is required'),
   image: z.url('Must be a valid URL'),
+  reviews: z.array(z.string()).optional(),
 });
 
 export type Campground = z.infer<typeof CampgroundSchema>;

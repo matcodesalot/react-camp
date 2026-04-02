@@ -1,7 +1,9 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import type { Campground } from '@my-project/shared';
 
-export interface CampgroundDocument extends Omit<Campground, '_id'>, Document {}
+export interface CampgroundDocument extends Omit<Campground, '_id' | 'reviews'>, Document {
+  reviews: mongoose.Types.ObjectId[];
+}
 
 const campgroundSchema = new Schema<CampgroundDocument>(
   {
@@ -10,6 +12,7 @@ const campgroundSchema = new Schema<CampgroundDocument>(
     description: { type: String, required: true },
     location: { type: String, required: true },
     image: { type: String, required: true },
+    reviews: [{ type: Schema.Types.ObjectId, ref: 'Review' }],
   },
   { timestamps: true }
 );

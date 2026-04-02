@@ -8,8 +8,9 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import path from 'path';
 import { ZodError } from 'zod';
-import { CampgroundSchema } from '@my-project/shared';
+import { CampgroundSchema, ReviewSchema } from '@my-project/shared';
 import { CampgroundModel } from './models/Campground';
+import { ReviewModel } from './models/Review';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -81,6 +82,17 @@ app.delete('/api/campgrounds/:id', async (req: Request, res: Response) => {
   const campground = await CampgroundModel.findByIdAndDelete(req.params.id);
   if (!campground) throw new AppError('Campground not found', 404);
   res.json({ message: 'Campground deleted' });
+});
+
+app.post('/api/campgrounds/:id/reviews', async (req: Request, res: Response) => {
+  const data = ReviewSchema.parse(req.body);
+  const review = new ReviewModel(data);
+  const campground = await CampgroundModel.findById(req.params.id);
+  if (!campground) throw new AppError('Campground not found', 404);
+  campground.reviews.push(review._id);
+  await review.save();
+  await campground.save();
+  res.status(201).json(review);
 });
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
