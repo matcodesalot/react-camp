@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ReviewSchema } from './review';
 
 export const CampgroundSchema = z.object({
   _id: z.string().optional(), // MongoDB ObjectIds are hex strings, not UUIDs
@@ -7,7 +8,7 @@ export const CampgroundSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   location: z.string().min(1, 'Location is required'),
   image: z.url('Must be a valid URL'),
-  reviews: z.array(z.string()).optional(),
+  reviews: z.array(z.union([z.string(), ReviewSchema])).default([]),
 });
 
 export type Campground = z.infer<typeof CampgroundSchema>;

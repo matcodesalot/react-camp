@@ -1,6 +1,18 @@
-import { useLoaderData, Link, Form, redirect } from 'react-router';
+import { useLoaderData, Link, Form, redirect, useFetcher, data } from 'react-router';
 import type { LoaderFunctionArgs, ActionFunctionArgs } from 'react-router';
-import { CampgroundSchema } from '@my-project/shared';
+import { useEffect, useRef } from 'react';
+import { CampgroundSchema, CreateReviewSchema } from '@my-project/shared';
+import { z } from 'zod';
+
+type ReviewFieldErrors = {
+  _form?: string[];
+  body?: string[];
+  rating?: string[];
+};
+
+function reviewActionError(errors: ReviewFieldErrors, values: Record<string, unknown>, status = 400) {
+  return data({ errors, values }, { status });
+}
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const res = await fetch(`/api/campgrounds/${params.id}`);
@@ -16,60 +28,132 @@ export async function action({ params, request }: ActionFunctionArgs) {
   }
 
   const formData = await request.formData();
+  const raw = {
+    body: formData.get('body'),
+    rating: Number(formData.get('rating')),
+  };
+
+  const result = CreateReviewSchema.safeParse(raw);
+  if (!result.success) {
+    return reviewActionError(z.flattenError(result.error).fieldErrors, raw);
+  }
+
   const res = await fetch(`/api/campgrounds/${params.id}/reviews`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      body: formData.get('body'),
-      rating: Number(formData.get('rating')),
-    }),
+    body: JSON.stringify(result.data),
   });
-  if (!res.ok) throw new Response('Failed to create review', { status: res.status });
+  if (!res.ok) {
+    const error = await res.text();
+    return reviewActionError({ _form: [error || 'Failed to create review'] }, raw, 500);
+  }
   return null;
 }
 
 export const Show = () => {
   const campground = useLoaderData<typeof loader>();
+  const fetcher = useFetcher<typeof action>();
+  const reviewErrors = fetcher.data && 'errors' in fetcher.data ? fetcher.data.errors : null;
+  const isBusy = fetcher.state !== 'idle';
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (fetcher.state === 'idle' && !reviewErrors) {
+      formRef.current?.reset();
+    }
+  }, [fetcher.state, reviewErrors]);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <img
-        src={campground.image}
-        alt={campground.title}
-        className="w-full h-96 object-cover rounded-lg mb-6"
-      />
-      <h1 className="text-3xl font-bold mb-2">{campground.title}</h1>
-      <p className="text-gray-700 mb-4">{campground.description}</p>
-      <p className="text-lg font-semibold mb-1">${campground.price} / night</p>
-      <p className="text-sm text-gray-500 mb-6">{campground.location}</p>
-      <div className="flex gap-3">
-        <Link
-          to={`/campgrounds/${campground._id}/edit`}
-          className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-        >
-          Edit
-        </Link>
-        <Form method="delete">
-          <button
-            type="submit"
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            Delete
-          </button>
-        </Form>
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="flex flex-col md:flex-row gap-8 items-start">
+        {/* Left column: campground info */}
+        <div className="flex-1 min-w-0">
+          <img
+            src={campground.image}
+            alt={campground.title}
+            className="w-full h-72 object-cover rounded-lg mb-6"
+          />
+          <h1 className="text-3xl font-bold mb-2">{campground.title}</h1>
+          <p className="text-gray-700 mb-4">{campground.description}</p>
+          <p className="text-lg font-semibold mb-1">${campground.price} / night</p>
+          <p className="text-sm text-gray-500 mb-6">{campground.location}</p>
+          <div className="flex gap-3">
+            <Link
+              to={`/campgrounds/${campground._id}/edit`}
+              className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+            >
+              Edit
+            </Link>
+            <Form method="delete">
+              <button
+                type="submit"
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </Form>
+          </div>
+        </div>
+
+        {/* Right column: reviews */}
+        <div className="flex-1 min-w-0">
+          <h2 className="text-2xl font-bold mb-4">Leave a review</h2>
+          {reviewErrors?._form && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
+              {reviewErrors._form[0]}
+            </div>
+          )}
+          <fetcher.Form ref={formRef} method="post" className="flex flex-col gap-4 mb-8">
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-gray-700">Rating</span>
+              <input
+                name="rating"
+                type="range"
+                min={1}
+                max={5}
+                step={1}
+                className="border border-gray-300 rounded py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {reviewErrors?.rating && (
+                <span className="text-sm text-red-500">{reviewErrors.rating[0]}</span>
+              )}
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-gray-700">Comment</span>
+              <textarea
+                name="body"
+                className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {reviewErrors?.body && (
+                <span className="text-sm text-red-500">{reviewErrors.body[0]}</span>
+              )}
+            </label>
+            <button
+              type="submit"
+              disabled={isBusy}
+              className="self-start px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+            >
+              {isBusy ? 'Submitting...' : 'Submit'}
+            </button>
+          </fetcher.Form>
+          {campground.reviews.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Reviews</h2>
+              <ul className="space-y-4">
+                {campground.reviews.map((review) => {
+                  if (typeof review === 'string') return null;
+                  return (
+                    <li key={review._id} className="border border-gray-200 rounded-lg p-4">
+                      <p className="text-sm font-semibold text-yellow-600 mb-1">Rating: {review.rating} / 5</p>
+                      <p className="text-gray-700">{review.body}</p>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
-      <h2 className="text-2xl font-bold mb-2">Leave a review</h2>
-      <Form method="post">
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-gray-700">Rating</span>
-          <input name="rating" type="range" min={1} max={5} step={1} className="border border-gray-300 rounded py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-gray-700">Comment</span>
-          <textarea name="body" className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-        </label>
-        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Submit</button>
-      </Form>
     </div>
   );
 };
