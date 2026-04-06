@@ -22,6 +22,15 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
 export async function action({ params, request }: ActionFunctionArgs) {
   if (request.method === 'DELETE') {
+    const formData = await request.formData();
+    const reviewId = formData.get('reviewId');
+
+    if (reviewId) {
+      const res = await fetch(`/api/campgrounds/${params.id}/reviews/${reviewId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Response('Failed to delete review', { status: res.status });
+      return null;
+    }
+
     const res = await fetch(`/api/campgrounds/${params.id}`, { method: 'DELETE' });
     if (!res.ok) throw new Response('Failed to delete campground', { status: res.status });
     return redirect('/campgrounds');
@@ -144,8 +153,21 @@ export const Show = () => {
                   if (typeof review === 'string') return null;
                   return (
                     <li key={review._id} className="border border-gray-200 rounded-lg p-4">
-                      <p className="text-sm font-semibold text-yellow-600 mb-1">Rating: {review.rating} / 5</p>
-                      <p className="text-gray-700">{review.body}</p>
+                      <div className="flex justify-between items-start gap-4">
+                        <div>
+                          <p className="text-sm font-semibold text-yellow-600 mb-1">Rating: {review.rating} / 5</p>
+                          <p className="text-gray-700">{review.body}</p>
+                        </div>
+                        <Form method="delete" className="shrink-0">
+                          <input type="hidden" name="reviewId" value={review._id} />
+                          <button
+                            type="submit"
+                            className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+                          >
+                            Delete
+                          </button>
+                        </Form>
+                      </div>
                     </li>
                   );
                 })}

@@ -95,6 +95,15 @@ app.post('/api/campgrounds/:id/reviews', async (req: Request, res: Response) => 
   res.status(201).json(review);
 });
 
+app.delete('/api/campgrounds/:id/reviews/:reviewId', async (req: Request, res: Response) => {
+  const campground = await CampgroundModel.findById(req.params.id);
+  if (!campground) throw new AppError('Campground not found', 404);
+  campground.reviews.pull(req.params.reviewId);
+  await ReviewModel.findByIdAndDelete(req.params.reviewId);
+  await campground.save();
+  res.json({ message: 'Review deleted' });
+});
+
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 
 app.use((req: Request, res: Response, next: NextFunction) => {
