@@ -11,20 +11,12 @@ import { ZodError } from 'zod';
 import { CampgroundSchema, ReviewSchema } from '@my-project/shared';
 import { CampgroundModel } from './models/Campground';
 import { ReviewModel } from './models/Review';
+import { router as campgroundsRouter } from './routes/campgrounds';
+import { router as reviewsRouter } from './routes/reviews';
+import { AppError } from './utils/AppError';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// ─── Custom Error Class ───────────────────────────────────────────────────────
-
-class AppError extends Error {
-  statusCode: number;
-  constructor(message: string, statusCode: number) {
-    super(message);
-    this.statusCode = statusCode;
-    this.name = 'AppError';
-  }
-}
 
 // ─── DB Connection ────────────────────────────────────────────────────────────
 
@@ -42,67 +34,12 @@ app.use(express.json());
 // app.use("/api/users", usersRouter);
 
 // Health check
-app.get("/api/health", (req, res) => {
+app.get("/api/health", (req: Request, res: Response) => {
   res.json({ status: "ok", message: 'Server is running!', timestamp: new Date().toISOString() });
 });
 
-// Express 5: thrown errors in async routes are automatically forwarded to the
-// error handler — no try/catch needed in the routes themselves.
-
-app.get('/api/campgrounds', async (req: Request, res: Response) => {
-  const campgrounds = await CampgroundModel.find({});
-  res.json(campgrounds);
-});
-
-app.get('/api/campgrounds/:id', async (req: Request, res: Response) => {
-  const campground = await CampgroundModel.findById(req.params.id).populate('reviews');
-  if (!campground) throw new AppError('Campground not found', 404);
-  res.json(campground);
-});
-
-app.post('/api/campgrounds', async (req: Request, res: Response) => {
-  const data = CampgroundSchema.parse(req.body);
-  const campground = new CampgroundModel(data);
-  await campground.save();
-  res.status(201).json(campground);
-});
-
-app.put('/api/campgrounds/:id', async (req: Request, res: Response) => {
-  const data = CampgroundSchema.parse(req.body);
-  const campground = await CampgroundModel.findByIdAndUpdate(
-    req.params.id,
-    data,
-    { returnDocument: 'after', runValidators: true }
-  );
-  if (!campground) throw new AppError('Campground not found', 404);
-  res.json(campground);
-});
-
-app.delete('/api/campgrounds/:id', async (req: Request, res: Response) => {
-  const campground = await CampgroundModel.findByIdAndDelete(req.params.id);
-  if (!campground) throw new AppError('Campground not found', 404);
-  res.json({ message: 'Campground deleted' });
-});
-
-app.post('/api/campgrounds/:id/reviews', async (req: Request, res: Response) => {
-  const data = ReviewSchema.parse(req.body);
-  const review = new ReviewModel(data);
-  const campground = await CampgroundModel.findById(req.params.id);
-  if (!campground) throw new AppError('Campground not found', 404);
-  campground.reviews.push(review._id);
-  await review.save();
-  await campground.save();
-  res.status(201).json(review);
-});
-
-app.delete('/api/campgrounds/:id/reviews/:reviewId', async (req: Request, res: Response) => {
-  const campground = await CampgroundModel.findById(req.params.id);
-  if (!campground) throw new AppError('Campground not found', 404);
-  campground.reviews.pull(req.params.reviewId);
-  await ReviewModel.findByIdAndDelete(req.params.reviewId);
-  await campground.save();
-  res.json({ message: 'Review deleted' });
-});
+app.use('/api/campgrounds', campgroundsRouter);
+app.use('/api/campgrounds/:id/reviews', reviewsRouter);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 

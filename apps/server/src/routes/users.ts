@@ -2,10 +2,10 @@ import { Router } from "express";
 import { CreateUserSchema } from "@my-project/shared";
 import { UserModel } from "../models/User";
 
-export const usersRouter = Router();
+export const router = Router();
 
 // GET all users
-usersRouter.get("/", async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const users = await UserModel.find().lean();
     res.json(users);
@@ -15,7 +15,7 @@ usersRouter.get("/", async (req, res) => {
 });
 
 // POST create a user — validate body with the shared Zod schema
-usersRouter.post("/", async (req, res) => {
+router.post("/", async (req, res) => {
   const result = CreateUserSchema.safeParse(req.body);
 
   if (!result.success) {
