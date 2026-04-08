@@ -1,4 +1,5 @@
 import { Outlet, useNavigation } from 'react-router';
+import { Toaster } from 'sonner';
 import Navbar from './Navbar';
 import Footer from './Footer';
 
@@ -18,6 +19,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <Footer />
+      <Toaster richColors position="bottom-right" />
     </div>
   );
 }

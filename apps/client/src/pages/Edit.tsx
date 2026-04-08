@@ -1,5 +1,7 @@
 import { useLoaderData, useFetcher, redirect, data } from 'react-router';
 import type { LoaderFunctionArgs, ActionFunctionArgs } from 'react-router';
+import { useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 import { CampgroundSchema, CreateCampgroundSchema } from '@my-project/shared';
 import { z } from 'zod';
 
@@ -48,6 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return actionError({ _form: [error || 'Failed to update campground'] }, raw, 500);
   }
 
+  sessionStorage.setItem('pendingToast', JSON.stringify({ type: 'success', message: 'Campground updated!' }));
   return redirect(`/campgrounds/${params.id}`);
 }
 
@@ -56,15 +59,23 @@ export const Edit = () => {
   const fetcher = useFetcher<typeof action>();
   const errors = fetcher.data && 'errors' in fetcher.data ? fetcher.data.errors : null;
   const isBusy = fetcher.state !== 'idle';
+  const wasSubmittingRef = useRef(false);
+
+  useEffect(() => {
+    if (fetcher.state !== 'idle') {
+      wasSubmittingRef.current = true;
+      return;
+    }
+    if (!wasSubmittingRef.current) return;
+    wasSubmittingRef.current = false;
+
+    const formErrors = fetcher.data && 'errors' in fetcher.data ? fetcher.data.errors : null;
+    if (formErrors?._form) toast.error(formErrors._form[0]);
+  }, [fetcher.state, fetcher.data]);
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Edit Campground</h1>
-      {errors?._form && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
-          {errors._form[0]}
-        </div>
-      )}
       <fetcher.Form method="post" className="flex flex-col gap-4">
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-700">Title</span>

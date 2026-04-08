@@ -2,7 +2,7 @@ import type { FC } from 'react';
 import { Link } from 'react-router';
 import type { Campground } from '@my-project/shared';
 
-interface CardProps extends Campground {}
+type CardProps = Pick<Campground, '_id' | 'title' | 'description' | 'location' | 'image'>;
 
 export const Card: FC<CardProps> = ({ _id, title, description, location, image }) => {
   return (

@@ -1,16 +1,8 @@
-// import express from "express";
-// import cors from "cors";
-// import { connectDB } from "./db/connect";
-// import { usersRouter } from "./routes/users";
-
 import express, { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import path from 'path';
 import { ZodError } from 'zod';
-import { CampgroundSchema, ReviewSchema } from '@my-project/shared';
-import { CampgroundModel } from './models/Campground';
-import { ReviewModel } from './models/Review';
 import { router as campgroundsRouter } from './routes/campgrounds';
 import { router as reviewsRouter } from './routes/reviews';
 import { AppError } from './utils/AppError';
