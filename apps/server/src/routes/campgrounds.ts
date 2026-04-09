@@ -1,6 +1,8 @@
 import { Router, Request, Response } from "express";
-import { CampgroundSchema } from "@my-project/shared";
+import { CreateCampgroundSchema } from "@my-project/shared";
 import { CampgroundModel } from "../models/Campground";
+import "../models/User";
+import { isLoggedIn, isAuthor } from "../middleware/auth";
 import { AppError } from "../utils/AppError";
 
 export const router = Router();
@@ -16,22 +18,25 @@ router.get('/', async (req: Request, res: Response) => {
 
 // GET a single campground by ID
 router.get('/:id', async (req: Request, res: Response) => {
-  const campground = await CampgroundModel.findById(req.params.id).populate('reviews');
+  const campground = await CampgroundModel.findById(req.params.id)
+    .populate({ path: 'reviews', populate: { path: 'author' } })
+    .populate('author');
+  console.log(campground);
   if (!campground) throw new AppError('Campground not found', 404);
   res.json(campground);
 });
 
 // POST a new campground
-router.post('/', async (req: Request, res: Response) => {
-  const data = CampgroundSchema.parse(req.body);
-  const campground = new CampgroundModel(data);
+router.post('/', isLoggedIn, async (req: Request, res: Response) => {
+  const data = CreateCampgroundSchema.parse(req.body);
+  const campground = new CampgroundModel({ ...data, author: req.session!.user.id });
   await campground.save();
   res.status(201).json(campground);
 });
 
 // PUT update a campground by ID
-router.put('/:id', async (req: Request, res: Response) => {
-  const data = CampgroundSchema.parse(req.body);
+router.put('/:id', isLoggedIn, isAuthor, async (req: Request, res: Response) => {
+  const data = CreateCampgroundSchema.parse(req.body);
   const campground = await CampgroundModel.findByIdAndUpdate(
     req.params.id,
     data,
@@ -42,7 +47,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 });
 
 // DELETE a campground by ID
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', isLoggedIn, isAuthor, async (req: Request, res: Response) => {
   const campground = await CampgroundModel.findByIdAndDelete(req.params.id);
   if (!campground) throw new AppError('Campground not found', 404);
   res.json({ message: 'Campground deleted' });

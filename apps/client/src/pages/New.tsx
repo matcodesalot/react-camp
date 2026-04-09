@@ -2,8 +2,9 @@ import { redirect, useFetcher, data } from 'react-router';
 import type { ActionFunctionArgs } from 'react-router';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { CreateCampgroundSchema, CampgroundSchema } from '@my-project/shared';
+import { CampgroundSchema, CreateCampgroundSchema } from '@my-project/shared';
 import { z } from 'zod';
+import { authClient } from '../lib/auth-client';
 
 type FieldErrors = {
   _form?: string[];
@@ -16,6 +17,13 @@ type FieldErrors = {
 
 function actionError(errors: FieldErrors, values: Record<string, unknown>, status = 400) {
   return data({ errors, values }, { status });
+}
+
+export async function loader() {
+  const { data: session } = await authClient.getSession();
+  const isLoggedIn = !!session;
+  if (!isLoggedIn) throw new Response(null, { status: 401, statusText: 'You must be logged in' });
+  return null;
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -36,6 +44,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const res = await fetch('/api/campgrounds', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify(result.data),
   });
 

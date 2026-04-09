@@ -1,8 +1,10 @@
 import express, { Request, Response, NextFunction } from 'express';
-import mongoose from 'mongoose';
 import cors from 'cors';
 import path from 'path';
 import { ZodError } from 'zod';
+import { toNodeHandler } from 'better-auth/node';
+import './lib/db';
+import { auth } from './lib/auth';
 import { router as campgroundsRouter } from './routes/campgrounds';
 import { router as reviewsRouter } from './routes/reviews';
 import { AppError } from './utils/AppError';
@@ -10,20 +12,18 @@ import { AppError } from './utils/AppError';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ─── DB Connection ────────────────────────────────────────────────────────────
-
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/react-camp');
-
-const db = mongoose.connection;
-db.on('error', console.error.bind(console, 'connection error:'));
-db.once('open', () => console.log('Connected to MongoDB'));
-
 // ─── Middleware ───────────────────────────────────────────────────────────────
-app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:5173" }));
+app.use(cors({
+  origin: process.env.CLIENT_URL || "http://localhost:5173",
+  credentials: true,
+}));
+
+// Better Auth handler must be mounted before express.json()
+app.all("/api/auth/{*splat}", toNodeHandler(auth));
+
 app.use(express.json());
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
-// app.use("/api/users", usersRouter);
 
 // Health check
 app.get("/api/health", (req: Request, res: Response) => {

@@ -3,6 +3,7 @@ import { ReviewSchema } from "@my-project/shared";
 import { CampgroundModel } from "../models/Campground";
 import { AppError } from "../utils/AppError";
 import { ReviewModel } from "../models/Review";
+import { isLoggedIn, isReviewAuthor } from "../middleware/auth";
 
 export const router = Router({ mergeParams: true });
 
@@ -10,9 +11,9 @@ export const router = Router({ mergeParams: true });
 // error handler — no try/catch needed in the routes themselves.
 
 // POST a new review
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', isLoggedIn, async (req: Request, res: Response) => {
   const data = ReviewSchema.parse(req.body);
-  const review = new ReviewModel(data);
+  const review = new ReviewModel({ ...data, author: req.session!.user.id });
   const campground = await CampgroundModel.findById(req.params.id);
   if (!campground) throw new AppError('Campground not found', 404);
   campground.reviews.push(review._id);
@@ -22,7 +23,7 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 // DELETE a review by ID
-router.delete('/:reviewId', async (req: Request, res: Response) => {
+router.delete('/:reviewId', isLoggedIn, isReviewAuthor, async (req: Request, res: Response) => {
   const campground = await CampgroundModel.findById(req.params.id);
   if (!campground) throw new AppError('Campground not found', 404);
   campground.reviews.pull(req.params.reviewId);

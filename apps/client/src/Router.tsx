@@ -5,8 +5,10 @@ import Layout from './components/Layout';
 import ErrorPage from './pages/ErrorPage';
 import { Campgrounds, loader as campgroundsLoader } from './pages/Campgrounds';
 import { Show, loader as showLoader, action as deleteAction } from './pages/Show';
-import { New, action as createAction } from './pages/New';
+import { New, loader as newLoader, action as createAction } from './pages/New';
 import { Edit, loader as editLoader, action as updateAction } from './pages/Edit';
+import Login from './pages/Login';
+import Register from './pages/Register';
 
 const router = createBrowserRouter([
   {
@@ -19,6 +21,14 @@ const router = createBrowserRouter([
         element: <App />,
       },
       {
+        path: '/login',
+        element: <Login />,
+      },
+      {
+        path: '/register',
+        element: <Register />,
+      },
+      {
         path: '/campgrounds',
         element: <Campgrounds />,
         loader: campgroundsLoader,
@@ -26,6 +36,7 @@ const router = createBrowserRouter([
       {
         path: '/campgrounds/new',
         element: <New />,
+        loader: newLoader,
         action: createAction,
       },
       {

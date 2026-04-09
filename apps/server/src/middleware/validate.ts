@@ -10,3 +10,5 @@ export const validateBody = (schema: ZodSchema) =>
     req.body = result.data;
     next();
   };
+
+  //TODO: Make a better validateCampground middleware and validateReview middleware. I don't think I'm using this anywhere.
