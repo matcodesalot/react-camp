@@ -2,7 +2,7 @@ import { redirect, useFetcher, data } from 'react-router';
 import type { ActionFunctionArgs } from 'react-router';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { CreateCampgroundSchema, CampgroundSchema } from '@my-project/shared';
+import { CampgroundSchema, CreateCampgroundSchema } from '@my-project/shared';
 import { z } from 'zod';
 
 type FieldErrors = {
@@ -36,6 +36,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const res = await fetch('/api/campgrounds', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify(result.data),
   });
 

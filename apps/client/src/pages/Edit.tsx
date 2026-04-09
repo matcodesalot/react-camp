@@ -42,6 +42,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const res = await fetch(`/api/campgrounds/${params.id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify(result.data),
   });
 

@@ -1,10 +1,10 @@
 import { z } from "zod";
 
 export const UserSchema = z.object({
-  _id: z.uuid().optional(),
+  _id: z.string().optional(),
   name: z.string().min(2, "Name is required"),
   email: z.email("Invalid email"),
-  createdAt: z.date().optional(),
+  createdAt: z.coerce.date().optional(),
 });
 
 // Derive a TypeScript type directly from the schema — no duplication

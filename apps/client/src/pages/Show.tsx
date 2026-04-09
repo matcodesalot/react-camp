@@ -2,7 +2,7 @@ import { useLoaderData, Link, Form, redirect, useFetcher, data } from 'react-rou
 import type { LoaderFunctionArgs, ActionFunctionArgs } from 'react-router';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { CampgroundSchema, CreateReviewSchema, type Review } from '@my-project/shared';
+import { PopulatedCampgroundSchema, CreateReviewSchema, type Review } from '@my-project/shared';
 import { z } from 'zod';
 
 type ReviewFieldErrors = {
@@ -18,7 +18,7 @@ function reviewActionError(errors: ReviewFieldErrors, values: Record<string, unk
 export async function loader({ params }: LoaderFunctionArgs) {
   const res = await fetch(`/api/campgrounds/${params.id}`);
   if (!res.ok) throw new Response('Campground not found', { status: res.status });
-  return CampgroundSchema.parse(await res.json());
+  return PopulatedCampgroundSchema.parse(await res.json());
 }
 
 export async function action({ params, request }: ActionFunctionArgs) {
@@ -154,6 +154,7 @@ export const Show = () => {
           <p className="text-gray-700 mb-4">{campground.description}</p>
           <p className="text-lg font-semibold mb-1">${campground.price} / night</p>
           <p className="text-sm text-gray-500 mb-6">{campground.location}</p>
+          <p className="text-sm text-gray-500 mb-6">Submitted by {campground.author?.name}</p>
           <div className="flex gap-3">
             <Link
               to={`/campgrounds/${campground._id}/edit`}
