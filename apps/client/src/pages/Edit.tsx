@@ -2,8 +2,9 @@ import { useLoaderData, useFetcher, redirect, data } from 'react-router';
 import type { LoaderFunctionArgs, ActionFunctionArgs } from 'react-router';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { CampgroundSchema, CreateCampgroundSchema } from '@my-project/shared';
+import { PopulatedCampgroundSchema, CreateCampgroundSchema } from '@my-project/shared';
 import { z } from 'zod';
+import { authClient } from '../lib/auth-client';
 
 type FieldErrors = {
   _form?: string[];
@@ -19,9 +20,18 @@ function actionError(errors: FieldErrors, values: Record<string, unknown>, statu
 }
 
 export async function loader({ params }: LoaderFunctionArgs) {
-  const res = await fetch(`/api/campgrounds/${params.id}`);
+  const [res, { data: session }] = await Promise.all([
+    fetch(`/api/campgrounds/${params.id}`),
+    authClient.getSession(),
+  ]);
   if (!res.ok) throw new Response('Campground not found', { status: res.status });
-  return CampgroundSchema.parse(await res.json());
+  const campground = PopulatedCampgroundSchema.parse(await res.json());
+  if (!session) throw new Response(null, { status: 401, statusText: 'You must be logged in' });
+  const isAuthor = campground.author?._id === session.user.id;
+  if (!isAuthor) {
+    throw new Response(null, { status: 403, statusText: 'You do not have permission to do that' });
+  }
+  return campground;
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {

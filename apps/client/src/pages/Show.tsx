@@ -1,8 +1,9 @@
 import { useLoaderData, Link, Form, redirect, useFetcher, data } from 'react-router';
 import type { LoaderFunctionArgs, ActionFunctionArgs } from 'react-router';
 import { useEffect, useRef } from 'react';
+import { useSession } from '../lib/auth-client';
 import { toast } from 'sonner';
-import { PopulatedCampgroundSchema, CreateReviewSchema, type Review } from '@my-project/shared';
+import { PopulatedCampgroundSchema, CreateReviewSchema, type PopulatedReview } from '@my-project/shared';
 import { z } from 'zod';
 
 type ReviewFieldErrors = {
@@ -28,7 +29,10 @@ export async function action({ params, request }: ActionFunctionArgs) {
 
     if (reviewId) {
       const res = await fetch(`/api/campgrounds/${params.id}/reviews/${reviewId}`, { method: 'DELETE' });
-      if (!res.ok) throw new Response('Failed to delete review', { status: res.status });
+      if (!res.ok) {
+        const message = await res.text();
+        return data({ error: message || 'Failed to delete review' }, { status: res.status });
+      }
       return null;
     }
 
@@ -66,11 +70,13 @@ function ReviewItem({
   campgroundId,
   deleteFetcher,
   isDeleting,
+  session,
 }: {
-  review: Review & { _id: string };
+  review: PopulatedReview & { _id: string };
   campgroundId: string;
   deleteFetcher: ReturnType<typeof useFetcher>;
   isDeleting: boolean;
+  session: ReturnType<typeof useSession>['data'];
 }) {
   return (
     <li className="border border-gray-200 rounded-lg p-4">
@@ -78,17 +84,22 @@ function ReviewItem({
         <div>
           <p className="text-sm font-semibold text-yellow-600 mb-1">Rating: {review.rating} / 5</p>
           <p className="text-gray-700">{review.body}</p>
+          {review.author && (
+            <p className="text-sm text-gray-500 mt-1">— {review.author.name}</p>
+          )}
         </div>
-        <deleteFetcher.Form method="delete" action={`/campgrounds/${campgroundId}`} className="shrink-0">
-          <input type="hidden" name="reviewId" value={review._id} />
-          <button
-            type="submit"
-            disabled={isDeleting}
-            className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50"
-          >
-            {isDeleting ? 'Deleting...' : 'Delete'}
-          </button>
-        </deleteFetcher.Form>
+        {review.author?._id === session?.user?.id && (
+          <deleteFetcher.Form method="delete" action={`/campgrounds/${campgroundId}`} className="shrink-0">
+            <input type="hidden" name="reviewId" value={review._id} />
+            <button
+              type="submit"
+              disabled={isDeleting}
+              className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </button>
+          </deleteFetcher.Form>
+        )}
       </div>
     </li>
   );
@@ -96,6 +107,7 @@ function ReviewItem({
 
 export const Show = () => {
   const campground = useLoaderData<typeof loader>();
+  const { data: session } = useSession();
   const fetcher = useFetcher<typeof action>();
   const reviewErrors = fetcher.data && 'errors' in fetcher.data ? fetcher.data.errors : null;
   const isBusy = fetcher.state !== 'idle';
@@ -113,8 +125,13 @@ export const Show = () => {
     }
     if (!wasDeletingReviewRef.current) return;
     wasDeletingReviewRef.current = false;
-    toast.success('Review deleted!');
-  }, [reviewDeleteFetcher.state]);
+    const deleteResult = reviewDeleteFetcher.data as { error?: string } | null;
+    if (deleteResult?.error) {
+      toast.error(deleteResult.error);
+    } else {
+      toast.success('Review deleted!');
+    }
+  }, [reviewDeleteFetcher.state, reviewDeleteFetcher.data]);
 
   useEffect(() => {
     const pending = sessionStorage.getItem('pendingToast');
@@ -155,60 +172,66 @@ export const Show = () => {
           <p className="text-lg font-semibold mb-1">${campground.price} / night</p>
           <p className="text-sm text-gray-500 mb-6">{campground.location}</p>
           <p className="text-sm text-gray-500 mb-6">Submitted by {campground.author?.name}</p>
-          <div className="flex gap-3">
-            <Link
-              to={`/campgrounds/${campground._id}/edit`}
-              className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-            >
-              Edit
-            </Link>
-            <Form method="delete">
-              <button
-                type="submit"
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          {campground.author?._id === session?.user?.id && (
+            <div className="flex gap-3">
+              <Link
+                to={`/campgrounds/${campground._id}/edit`}
+                className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
               >
-                Delete
-              </button>
-            </Form>
-          </div>
+                Edit
+              </Link>
+              <Form method="delete">
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </Form>
+            </div>
+          )}
         </div>
 
         {/* Right column: reviews */}
         <div className="flex-1 min-w-0">
-          <h2 className="text-2xl font-bold mb-4">Leave a review</h2>
-          <fetcher.Form ref={formRef} method="post" className="flex flex-col gap-4 mb-8">
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-gray-700">Rating</span>
-              <input
-                name="rating"
-                type="range"
-                min={1}
-                max={5}
-                step={1}
-                className="border border-gray-300 rounded py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              {reviewErrors?.rating && (
-                <span className="text-sm text-red-500">{reviewErrors.rating[0]}</span>
-              )}
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-gray-700">Comment</span>
-              <textarea
-                name="body"
-                className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              {reviewErrors?.body && (
-                <span className="text-sm text-red-500">{reviewErrors.body[0]}</span>
-              )}
-            </label>
-            <button
-              type="submit"
-              disabled={isBusy}
-              className="self-start px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-            >
-              {isBusy ? 'Submitting...' : 'Submit'}
-            </button>
-          </fetcher.Form>
+          {session?.user && (
+            <>
+              <h2 className="text-2xl font-bold mb-4">Leave a review</h2>
+              <fetcher.Form ref={formRef} method="post" className="flex flex-col gap-4 mb-8">
+                <label className="flex flex-col gap-1">
+                  <span className="text-sm font-medium text-gray-700">Rating</span>
+                  <input
+                    name="rating"
+                    type="range"
+                    min={1}
+                    max={5}
+                    step={1}
+                    className="border border-gray-300 rounded py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {reviewErrors?.rating && (
+                    <span className="text-sm text-red-500">{reviewErrors.rating[0]}</span>
+                  )}
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="text-sm font-medium text-gray-700">Comment</span>
+                  <textarea
+                    name="body"
+                    className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {reviewErrors?.body && (
+                    <span className="text-sm text-red-500">{reviewErrors.body[0]}</span>
+                  )}
+                </label>
+                <button
+                  type="submit"
+                  disabled={isBusy}
+                  className="self-start px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {isBusy ? 'Submitting...' : 'Submit'}
+                </button>
+              </fetcher.Form>
+            </>
+          )}
           {campground.reviews.length > 0 && (
             <div>
               <h2 className="text-2xl font-bold mb-4">Reviews</h2>
@@ -218,10 +241,11 @@ export const Show = () => {
                   return (
                     <ReviewItem
                       key={review._id}
-                      review={review as Review & { _id: string }}
+                      review={review as PopulatedReview & { _id: string }}
                       campgroundId={campground._id!}
                       deleteFetcher={reviewDeleteFetcher}
                       isDeleting={deletingReviewId === review._id}
+                      session={session}
                     />
                   );
                 })}

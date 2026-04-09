@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { UserSchema } from './user';
-import { ReviewSchema } from './review';
+import { ReviewSchema, PopulatedReviewSchema } from './review';
 
 export const CampgroundSchema = z.object({
   _id: z.string().optional(),
@@ -17,7 +17,7 @@ export type Campground = z.infer<typeof CampgroundSchema>;
 
 export const PopulatedCampgroundSchema = CampgroundSchema.extend({
   author: UserSchema.nullable(),
-  reviews: z.array(ReviewSchema).default([]),
+  reviews: z.array(PopulatedReviewSchema).default([]),
 });
 export type PopulatedCampground = z.infer<typeof PopulatedCampgroundSchema>;
 
