@@ -10,6 +10,10 @@ export const router = Router();
 // Express 5: thrown errors in async routes are automatically forwarded to the
 // error handler — no try/catch needed in the routes themselves.
 
+// Controllers are skipped here intentionally: each handler is a one- or
+// two-liner with no shared logic, so extracting them into a separate file
+// would only add indirection without any organisational benefit.
+
 // GET all campgrounds
 router.get('/', async (req: Request, res: Response) => {
   const campgrounds = await CampgroundModel.find({});
@@ -21,7 +25,6 @@ router.get('/:id', async (req: Request, res: Response) => {
   const campground = await CampgroundModel.findById(req.params.id)
     .populate({ path: 'reviews', populate: { path: 'author' } })
     .populate('author');
-  console.log(campground);
   if (!campground) throw new AppError('Campground not found', 404);
   res.json(campground);
 });

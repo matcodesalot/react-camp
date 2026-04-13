@@ -1,11 +1,12 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
+import { z } from "zod";
 import { CreateUserSchema } from "@my-project/shared";
 import { UserModel } from "../models/User";
 
 export const router = Router();
 
 // GET all users
-router.get("/", async (req, res) => {
+router.get("/", async (req: Request, res: Response) => {
   try {
     const users = await UserModel.find().lean();
     res.json(users);
@@ -15,12 +16,12 @@ router.get("/", async (req, res) => {
 });
 
 // POST create a user — validate body with the shared Zod schema
-router.post("/", async (req, res) => {
+router.post("/", async (req: Request, res: Response) => {
   const result = CreateUserSchema.safeParse(req.body);
 
   if (!result.success) {
     // Return Zod's formatted errors to the client
-    return res.status(400).json({ errors: result.error.format() });
+    return res.status(400).json({ errors: z.flattenError(result.error) });
   }
 
   try {

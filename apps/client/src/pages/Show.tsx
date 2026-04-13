@@ -1,10 +1,11 @@
 import { useLoaderData, Link, Form, redirect, useFetcher, data } from 'react-router';
 import type { LoaderFunctionArgs, ActionFunctionArgs } from 'react-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSession } from '../lib/auth-client';
 import { toast } from 'sonner';
 import { PopulatedCampgroundSchema, CreateReviewSchema, type PopulatedReview } from '@my-project/shared';
 import { z } from 'zod';
+import { StarRating, StarDisplay } from '../components/StarRating';
 
 type ReviewFieldErrors = {
   _form?: string[];
@@ -82,7 +83,7 @@ function ReviewItem({
     <li className="border border-gray-200 rounded-lg p-4">
       <div className="flex justify-between items-start gap-4">
         <div>
-          <p className="text-sm font-semibold text-yellow-600 mb-1">Rating: {review.rating} / 5</p>
+          <StarDisplay value={review.rating} />
           <p className="text-gray-700">{review.body}</p>
           {review.author && (
             <p className="text-sm text-gray-500 mt-1">— {review.author.name}</p>
@@ -113,6 +114,7 @@ export const Show = () => {
   const isBusy = fetcher.state !== 'idle';
   const formRef = useRef<HTMLFormElement>(null);
   const wasSubmittingRef = useRef(false);
+  const [rating, setRating] = useState<number>(0);
 
   const reviewDeleteFetcher = useFetcher();
   const deletingReviewId = reviewDeleteFetcher.formData?.get('reviewId') as string | null;
@@ -153,6 +155,7 @@ export const Show = () => {
       if (reviewErrors._form) toast.error(reviewErrors._form[0]);
     } else {
       formRef.current?.reset();
+      setRating(0);
       toast.success('Review submitted!');
     }
   }, [fetcher.state, reviewErrors]);
@@ -200,14 +203,7 @@ export const Show = () => {
               <fetcher.Form ref={formRef} method="post" className="flex flex-col gap-4 mb-8">
                 <label className="flex flex-col gap-1">
                   <span className="text-sm font-medium text-gray-700">Rating</span>
-                  <input
-                    name="rating"
-                    type="range"
-                    min={1}
-                    max={5}
-                    step={1}
-                    className="border border-gray-300 rounded py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  <StarRating value={rating} onChange={setRating} />
                   {reviewErrors?.rating && (
                     <span className="text-sm text-red-500">{reviewErrors.rating[0]}</span>
                   )}
