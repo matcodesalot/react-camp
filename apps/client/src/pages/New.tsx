@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { CampgroundSchema, CreateCampgroundSchema } from '@my-project/shared';
 import { z } from 'zod';
 import { authClient } from '../lib/auth-client';
+import { API_BASE } from '../lib/api';
 
 type FieldErrors = {
   _form?: string[];
@@ -41,7 +42,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return actionError(z.flattenError(result.error).fieldErrors, raw);
   }
 
-  const res = await fetch('/api/campgrounds', {
+  const res = await fetch(`${API_BASE}/api/campgrounds`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',

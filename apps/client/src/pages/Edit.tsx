@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { PopulatedCampgroundSchema, CreateCampgroundSchema } from '@my-project/shared';
 import { z } from 'zod';
 import { authClient } from '../lib/auth-client';
+import { API_BASE } from '../lib/api';
 
 type FieldErrors = {
   _form?: string[];
@@ -21,7 +22,7 @@ function actionError(errors: FieldErrors, values: Record<string, unknown>, statu
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const [res, { data: session }] = await Promise.all([
-    fetch(`/api/campgrounds/${params.id}`),
+    fetch(`${API_BASE}/api/campgrounds/${params.id}`),
     authClient.getSession(),
   ]);
   if (!res.ok) throw new Response('Campground not found', { status: res.status });
@@ -49,7 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return actionError(z.flattenError(result.error).fieldErrors, raw);
   }
 
-  const res = await fetch(`/api/campgrounds/${params.id}`, {
+  const res = await fetch(`${API_BASE}/api/campgrounds/${params.id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
