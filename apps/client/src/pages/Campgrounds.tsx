@@ -4,10 +4,10 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { Card } from '../components/Card';
 import { CampgroundSchema } from '@my-project/shared';
-import { API_BASE } from '../lib/api';
+import { apiFetch } from '../lib/api';
 
 export async function loader() {
-  const res = await fetch(`${API_BASE}/api/campgrounds`);
+  const res = await apiFetch(`/api/campgrounds`);
   if (!res.ok) throw new Response('Failed to load campgrounds', { status: res.status });
   return z.array(CampgroundSchema).parse(await res.json());
 }

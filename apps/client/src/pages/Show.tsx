@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { PopulatedCampgroundSchema, CreateReviewSchema, type PopulatedReview } from '@my-project/shared';
 import { z } from 'zod';
 import { StarRating, StarDisplay } from '../components/StarRating';
-import { API_BASE } from '../lib/api';
+import { apiFetch } from '../lib/api';
 
 type ReviewFieldErrors = {
   _form?: string[];
@@ -19,7 +19,7 @@ function reviewActionError(errors: ReviewFieldErrors, values: Record<string, unk
 }
 
 export async function loader({ params }: LoaderFunctionArgs) {
-  const res = await fetch(`${API_BASE}/api/campgrounds/${params.id}`);
+  const res = await apiFetch(`/api/campgrounds/${params.id}`);
   if (!res.ok) throw new Response('Campground not found', { status: res.status });
   return PopulatedCampgroundSchema.parse(await res.json());
 }
@@ -30,7 +30,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
     const reviewId = formData.get('reviewId');
 
     if (reviewId) {
-      const res = await fetch(`${API_BASE}/api/campgrounds/${params.id}/reviews/${reviewId}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/campgrounds/${params.id}/reviews/${reviewId}`, { method: 'DELETE' });
       if (!res.ok) {
         const message = await res.text();
         return data({ error: message || 'Failed to delete review' }, { status: res.status });
@@ -38,7 +38,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
       return null;
     }
 
-    const res = await fetch(`${API_BASE}/api/campgrounds/${params.id}`, { method: 'DELETE' });
+    const res = await apiFetch(`/api/campgrounds/${params.id}`, { method: 'DELETE' });
     if (!res.ok) throw new Response('Failed to delete campground', { status: res.status });
     sessionStorage.setItem('pendingToast', JSON.stringify({ type: 'success', message: 'Campground deleted!' }));
     return redirect('/campgrounds');
@@ -55,7 +55,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
     return reviewActionError(z.flattenError(result.error).fieldErrors, raw);
   }
 
-  const res = await fetch(`${API_BASE}/api/campgrounds/${params.id}/reviews`, {
+  const res = await apiFetch(`/api/campgrounds/${params.id}/reviews`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(result.data),

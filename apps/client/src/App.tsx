@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { API_BASE } from './lib/api';
+import { apiFetch } from './lib/api';
 
 export default function App() {
   const [status, setStatus] = useState<string>('Loading...');
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/health`)
+    apiFetch(`/api/health`)
       .then((res) => res.json())
       .then((data) => setStatus(data.message))
       .catch(() => setStatus('Error connecting to server'));
