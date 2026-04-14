@@ -1,7 +1,7 @@
 import { createAuthClient } from "better-auth/react";
 
 export const authClient = createAuthClient({
-  baseURL: "",  // empty = same origin, uses Vite proxy
+  baseURL: import.meta.env.VITE_API_URL || "",
   fetchOptions: {
     credentials: "include",
   },
