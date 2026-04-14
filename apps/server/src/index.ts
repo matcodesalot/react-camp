@@ -1,7 +1,11 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import path from 'path';
+import path, { dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { ZodError } from 'zod';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 import { toNodeHandler } from 'better-auth/node';
 import './lib/db';
 import { auth } from './lib/auth';
@@ -90,13 +94,6 @@ if (process.env.NODE_ENV === 'production') {
     res.sendFile(path.join(__dirname, '../../../apps/client/dist/index.html'));
   });
 }
-
-// Connect to DB, then start the server
-// connectDB().then(() => {
-//   app.listen(PORT, () => {
-//     console.log(`Server running at http://localhost:${PORT}`);
-//   });
-// });
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
