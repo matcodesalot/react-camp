@@ -40,9 +40,13 @@ router.post('/', isLoggedIn, async (req: Request, res: Response) => {
 // PUT update a campground by ID
 router.put('/:id', isLoggedIn, isAuthor, async (req: Request, res: Response) => {
   const data = CreateCampgroundSchema.parse(req.body);
+  const { image, ...rest } = data;
+  const update = image === null
+    ? { ...rest, $unset: { image: 1 } }
+    : { ...rest, image };
   const campground = await CampgroundModel.findByIdAndUpdate(
     req.params.id,
-    data,
+    update,
     { returnDocument: 'after', runValidators: true }
   );
   if (!campground) throw new AppError('Campground not found', 404);

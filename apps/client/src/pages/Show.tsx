@@ -166,11 +166,13 @@ export const Show = () => {
       <div className="flex flex-col md:flex-row gap-8 items-start">
         {/* Left column: campground info */}
         <div className="flex-1 min-w-0">
-          <img
-            src={campground.image}
-            alt={campground.title}
-            className="w-full h-72 object-cover rounded-lg mb-6"
-          />
+          {campground.image && (
+            <img
+              src={campground.image}
+              alt={campground.title}
+              className="w-full h-72 object-cover rounded-lg mb-6"
+            />
+          )}
           <h1 className="text-3xl font-bold mb-2">{campground.title}</h1>
           <p className="text-gray-700 mb-4">{campground.description}</p>
           <p className="text-lg font-semibold mb-1">${campground.price} / night</p>

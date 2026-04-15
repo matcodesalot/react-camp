@@ -8,7 +8,7 @@ export const CampgroundSchema = z.object({
   price: z.number({ error: 'Price must be a number' }).min(0, 'Price must be 0 or greater'),
   description: z.string().min(1, 'Description is required'),
   location: z.string().min(1, 'Location is required'),
-  image: z.url('Must be a valid URL'),
+  image: z.url('Must be a valid URL').optional().nullable(),
   author: z.union([z.string(), UserSchema]).nullable(),
   reviews: z.array(z.union([z.string(), ReviewSchema])).default([]),
 });

@@ -13,7 +13,7 @@ const campgroundSchema = new Schema<CampgroundDocument>(
     price: { type: Number, required: true, min: 0 },
     description: { type: String, required: true },
     location: { type: String, required: true },
-    image: { type: String, required: true },
+    image: { type: String },
     author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     reviews: [{ type: Schema.Types.ObjectId, ref: 'Review' }],
   },

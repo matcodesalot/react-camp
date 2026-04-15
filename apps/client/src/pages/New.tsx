@@ -34,7 +34,7 @@ export async function action({ request }: ActionFunctionArgs) {
     price: Number(formData.get('price')),
     description: formData.get('description'),
     location: formData.get('location'),
-    image: formData.get('image'),
+    image: formData.get('image') || undefined,
   };
 
   const result = CreateCampgroundSchema.safeParse(raw);
@@ -128,10 +128,9 @@ export const New = () => {
           )}
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-gray-700">Image URL</span>
+          <span className="text-sm font-medium text-gray-700">Image URL (optional)</span>
           <input
             name="image"
-            type="url"
             placeholder="https://example.com/image.jpg"
             defaultValue={values?.image?.toString()}
             className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
