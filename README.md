@@ -150,3 +150,10 @@ Or start them individually:
 npm run dev:server   # Express API on http://localhost:3000
 npm run dev:client   # Vite/React on http://localhost:5173
 ```
+
+## TODO
+
+- Homepage
+- Add image upload instead of url link. Multiple images allowed?
+- Cluster map with MapLibre GL JS and OpenMapTiles
+- Better security with Helmet
