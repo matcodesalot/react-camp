@@ -42,6 +42,10 @@ This project is a modernized rebuild of [Colt Steele's YelpCamp](https://github.
    - `CLIENT_URL` — URL of the React client, used by Better Auth for CORS trusted origins. Defaults to `http://localhost:5173`.
    - `BETTER_AUTH_SECRET` — Secret used by Better Auth to sign sessions. Must be at least 32 characters. **Required.** Generate one with:
      ```bash
+     openssl rand -hex 32
+     ```
+     or
+     ```bash
      node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
      ```
    - `BETTER_AUTH_URL` — Public base URL of the API, used by Better Auth for cookie and redirect logic. Defaults to `http://localhost:3000`.
